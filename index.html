@@ -40,7 +40,7 @@
         <input type="email" id="email" class="form-control" placeholder="guardian@email.com">
       </div>
       <button onclick="runSearch()" id="btn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Check Status</button>
-      <div id="error" class="text-danger mt-3 text-center hidden">No matching student found. Please check your details.</div>
+      <div id="error" class="text-danger mt-3 text-center hidden"></div>
     </div>
   </div>
 
@@ -65,9 +65,8 @@
       document.getElementById('content').innerHTML = '';
     }
 
-    // NATIVE JSONP HANDLER: This receives the data from Google
+    // NATIVE JSONP HANDLER
     window.receiveData = function(results) {
-      // Clean up the script tag
       const scriptTag = document.getElementById('jsonp_loader');
       if(scriptTag) scriptTag.remove(); 
       render(results);
@@ -77,30 +76,30 @@
       const dob = document.getElementById('dob').value;
       const email = document.getElementById('email').value;
       const btn = document.getElementById('btn');
+      const errBox = document.getElementById('error');
       
       if(!dob || !email) { alert("Please enter both DOB and Email."); return; }
       
       btn.disabled = true;
       btn.innerText = "Searching...";
-      document.getElementById('error').classList.add('hidden');
+      errBox.classList.add('hidden');
 
-      // Remove any old script tags
       const oldScript = document.getElementById('jsonp_loader');
       if(oldScript) oldScript.remove();
 
-      // Create a NEW script tag to fetch data
-      // This bypasses the Google Cookie Conflict because it's just a script, not an iframe
+      // Create a script tag to fetch data
       const safeDob = encodeURIComponent(dob);
       const safeEmail = encodeURIComponent(email);
       const script = document.createElement('script');
       script.id = 'jsonp_loader';
       script.src = `${SCRIPT_URL}?callback=receiveData&dob=${safeDob}&email=${safeEmail}`;
       
+      // ERROR HANDLING FOR MULTI-LOGIN CONFLICTS
       script.onerror = function() {
         btn.disabled = false;
         btn.innerText = "Check Status";
-        // If this happens, it usually means the Script Deployment wasn't updated to 'New Version'
-        alert("Unable to connect. Please ensure you deployed the script as a 'New Version'.");
+        errBox.innerHTML = "<strong>Connection Failed.</strong><br>If you have multiple Google accounts signed in, this may fail for you (but works for others).<br>Try opening this page in an <strong>Incognito Window</strong>.";
+        errBox.classList.remove('hidden');
       };
 
       document.body.appendChild(script);
@@ -110,6 +109,7 @@
       document.getElementById('btn').disabled = false;
       document.getElementById('btn').innerText = "Check Status";
       if (!results || results.length === 0) {
+        document.getElementById('error').innerHTML = "No matching student found. Please check your details.";
         document.getElementById('error').classList.remove('hidden');
         return;
       }
