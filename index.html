@@ -54,7 +54,6 @@
   </div>
 
   <script>
-    // ⬇️ PASTE YOUR PERSONAL SCRIPT URL HERE ⬇️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNBzYcPxE3U-rTGKSqU9IgTYdjJP2glEXsnBMWmx3gQKA08OfaXNK9VaXGkz1U4zzx/exec";
 
     function resetSearch() {
@@ -65,12 +64,16 @@
       document.getElementById('content').innerHTML = '';
     }
 
-    // NATIVE JSONP HANDLER
-    window.receiveData = function(results) {
-      const scriptTag = document.getElementById('jsonp_loader');
-      if(scriptTag) scriptTag.remove(); 
-      render(results);
-    };
+    // Since we are using a text fetch, we need to parse the JSONP response manually
+    function parseJsonp(text) {
+        // The text looks like: receiveData({...})
+        // We strip the function name and parentheses to get just the JSON
+        const match = text.match(/receiveData\((.*)\)/);
+        if (match && match[1]) {
+            return JSON.parse(match[1]);
+        }
+        return null;
+    }
 
     function runSearch() {
       const dob = document.getElementById('dob').value;
@@ -84,25 +87,32 @@
       btn.innerText = "Searching...";
       errBox.classList.add('hidden');
 
-      const oldScript = document.getElementById('jsonp_loader');
-      if(oldScript) oldScript.remove();
-
-      // Create a script tag to fetch data
       const safeDob = encodeURIComponent(dob);
       const safeEmail = encodeURIComponent(email);
-      const script = document.createElement('script');
-      script.id = 'jsonp_loader';
-      script.src = `${SCRIPT_URL}?callback=receiveData&dob=${safeDob}&email=${safeEmail}`;
       
-      // ERROR HANDLING FOR MULTI-LOGIN CONFLICTS
-      script.onerror = function() {
-        btn.disabled = false;
-        btn.innerText = "Check Status";
-        errBox.innerHTML = "<strong>Connection Failed.</strong><br>If you have multiple Google accounts signed in, this may fail for you (but works for others).<br>Try opening this page in an <strong>Incognito Window</strong>.";
-        errBox.classList.remove('hidden');
-      };
+      // PROXY TRICK: 
+      // We send the request through a public proxy.
+      // The proxy visits Google for us (without our cookies) and sends back the text.
+      const targetUrl = `${SCRIPT_URL}?callback=receiveData&dob=${safeDob}&email=${safeEmail}`;
+      const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
 
-      document.body.appendChild(script);
+      fetch(proxyUrl)
+        .then(response => response.text())
+        .then(text => {
+            const data = parseJsonp(text);
+            if (data) {
+                render(data);
+            } else {
+                throw new Error("Invalid response");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerText = "Check Status";
+            errBox.innerHTML = "<strong>Connection Error.</strong><br>Could not retrieve data. Please try again later.";
+            errBox.classList.remove('hidden');
+        });
     }
 
     function render(results) {
