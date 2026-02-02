@@ -4,7 +4,6 @@
   <base target="_top">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Your original styles */
     body { background-color: #f4f7f9; padding: 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .hidden { display: none; }
     .card { border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 550px; margin: auto; background: white; }
@@ -53,7 +52,7 @@
   </div>
 
   <script>
-    // CRITICAL: Put your Web App URL here
+    // ⬇️ UPDATE THIS URL WITH YOUR NEW DEPLOYMENT URL ⬇️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2ECQfxL6wCulYIeMcDXZlIS0J7mqatkS-9xXutL_z2qONrQ-hb4c74mM1Amg11W9t/exec";
 
     function resetSearch() {
@@ -75,23 +74,37 @@
       btn.innerText = "Searching...";
       document.getElementById('error').classList.add('hidden');
 
-      // Since we are NOT in the Google environment, we use 'fetch' to call the script
-      const url = `${SCRIPT_URL}?dob=${dob}&email=${email}`;
+      // --- JSONP TECHNIQUE ---
+      // Instead of 'fetch', we create a script tag.
+      // The script tag asks Google for data and Google replies with "handleResponse({...})"
+      // This bypasses CORS and Redirect errors completely.
+      
+      const script = document.createElement('script');
+      // We send 'handleResponse' as the callback name
+      const safeDob = encodeURIComponent(dob);
+      const safeEmail = encodeURIComponent(email);
+      script.src = `${SCRIPT_URL}?callback=handleResponse&dob=${safeDob}&email=${safeEmail}`;
+      
+      // If the script fails to load (e.g. timeout or blocked)
+      script.onerror = function() {
+        btn.disabled = false;
+        btn.innerText = "Check Status";
+        alert("Connection timed out. Please try again.");
+      };
 
-      fetch(url)
-        .then(response => response.json())
-        .then(data => {
-          render(data);
-        })
-        .catch(err => {
-          btn.disabled = false;
-          btn.innerText = "Check Status";
-          alert("Could not connect to database. Ensure you are signed into your AoPS account or the script is public.");
-          console.error(err);
-        });
+      // Add the script to the page to trigger the request
+      document.body.appendChild(script);
     }
 
-    // Your original render function (unchanged)
+    // This function is CALLED by the Google Script when it loads
+    window.handleResponse = function(results) {
+      // Remove the script tag to keep DOM clean
+      const lastScript = document.body.lastChild;
+      if (lastScript.tagName === 'SCRIPT') document.body.removeChild(lastScript);
+
+      render(results);
+    };
+
     function render(results) {
       document.getElementById('btn').disabled = false;
       document.getElementById('btn').innerText = "Check Status";
