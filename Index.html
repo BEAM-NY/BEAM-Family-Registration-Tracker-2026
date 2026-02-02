@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEAM Student Portal | Redirecting...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7f9;
+            color: #333;
+        }
+        .loader-box {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #004a99;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-manual {
+            display: none;
+            margin-top: 1rem;
+            color: #004a99;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loader-box">
+        <div class="spinner"></div>
+        <div id="status">Connecting to BEAM Portal...</div>
+        <a id="manualLink" class="btn-manual" href="https://script.google.com/macros/s/AKfycby2ECQfxL6wCulYIeMcDXZlIS0J7mqatkS-9xXutL_z2qONrQ-hb4c74mM1Amg11W9t/exec">
+            Click here if not redirected
+        </a>
+    </div>
+
+    <script>
+        // The "Clean" URL without any /u/0/ markers
+        const portalUrl = "https://script.google.com/macros/s/AKfycby2ECQfxL6wCulYIeMcDXZlIS0J7mqatkS-9xXutL_z2qONrQ-hb4c74mM1Amg11W9t/exec";
+
+        // This force-clears the window location to bypass Google's multi-login cookie check
+        window.onload = function() {
+            setTimeout(function() {
+                window.location.replace(portalUrl);
+            }, 500);
+
+            // If the redirect fails (e.g. browser blocks it), show the manual link
+            setTimeout(function() {
+                document.getElementById('status').innerText = "Taking a bit longer than usual...";
+                document.getElementById('manualLink').style.display = "block";
+            }, 3000);
+        };
+    </script>
+</body>
+</html>
