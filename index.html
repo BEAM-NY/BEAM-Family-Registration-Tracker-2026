@@ -73,13 +73,17 @@
     };
 
     function manualFallback() {
-      // This function opens the Google Script directly in a new tab.
-      // This bypasses ALL cookie bugs because it's a direct visit, not an embed.
       const dob = document.getElementById('dob').value;
       const email = document.getElementById('email').value;
       const safeDob = encodeURIComponent(dob);
       const safeEmail = encodeURIComponent(email);
-      window.open(`${SCRIPT_URL}?dob=${safeDob}&email=${safeEmail}`, '_blank');
+      const target = `${SCRIPT_URL}?dob=${safeDob}&email=${safeEmail}`;
+      
+      // THE FIX: This URL forces Google to ask "Which account?"
+      // This solves the /u/1/ redirect error you were seeing.
+      const chooserUrl = `https://accounts.google.com/AccountChooser?continue=${encodeURIComponent(target)}`;
+      
+      window.open(chooserUrl, '_blank');
     }
 
     function runSearch() {
@@ -97,21 +101,22 @@
       const oldScript = document.getElementById('jsonp_loader');
       if(oldScript) oldScript.remove();
 
-      // Try the seamless method first
       const safeDob = encodeURIComponent(dob);
       const safeEmail = encodeURIComponent(email);
       const script = document.createElement('script');
       script.id = 'jsonp_loader';
+      // Added crossorigin to try and strip cookies early
+      script.setAttribute('crossorigin', 'anonymous');
       script.src = `${SCRIPT_URL}?callback=receiveData&dob=${safeDob}&email=${safeEmail}`;
       
-      // If it fails (Cookie Bug), show the "Safety Valve" button
+      // ERROR HANDLING: If the automatic check fails...
       script.onerror = function() {
         btn.disabled = false;
         btn.innerText = "Check Status";
         errBox.innerHTML = `
-          <strong>Connection Blocked</strong><br>
-          Your browser settings (or multiple Google logins) are preventing a direct connection.<br><br>
-          <button onclick="manualFallback()" class="btn btn-outline-dark btn-sm fw-bold w-100">Click here to view results securely ↗</button>
+          <strong>Connection Issue Detected</strong><br>
+          We couldn't verify your browser session automatically.<br><br>
+          <button onclick="manualFallback()" class="btn btn-dark btn-sm fw-bold w-100 py-2">Launch Secure Portal ↗</button>
         `;
         errBox.classList.remove('hidden');
       };
@@ -153,6 +158,21 @@
             html += `<tr><td class="doc-name">${professionalLabels[d.name] || d.name}</td><td class="${statusClass} text-end">${d.status}</td></tr>`;
         });
         html += `</table>`;
+        
+        const surveyForms = ["Liability Waiver", "Media Release", "Code of Conduct", "Data Consent", "Brilliant", "Attendance"];
+        const uploadForms = ["Meningitis", "Report Card", "Parent Med", "Phys Med", "Immuno", "Ins Front", "Ins Back"];
+        const missingSurvey = s.details.filter(d => d.status !== 'Submitted' && surveyForms.includes(d.name)).length;
+        const missingUpload = s.details.filter(d => d.status !== 'Submitted' && uploadForms.includes(d.name)).length;
+        const isFullyComplete = (missingSurvey === 0 && missingUpload === 0);
+
+        if (!isFullyComplete) {
+            html += `<div class="btn-submit-group shadow-sm"><p class="text-center fw-bold text-dark mb-3">Next Steps:</p>`;
+            if (missingSurvey > 0) html += `<a href="https://www.surveymonkey.com/r/R3PW5S8" target="_blank" class="btn btn-danger btn-action w-100 shadow-sm">Fill missing consent forms</a>`;
+            if (missingUpload > 0) html += `<a href="https://www.surveymonkey.com/r/9GYMKBM" target="_blank" class="btn btn-warning btn-action w-100 shadow-sm text-dark">Upload missing documents</a>`;
+            html += `</div>`;
+        } else {
+            html += `<div class="alert alert-success mt-4 text-center border-0 shadow-sm">🎉 Registration is complete.</div>`;
+        }
       });
 
       document.getElementById('content').innerHTML = html;
