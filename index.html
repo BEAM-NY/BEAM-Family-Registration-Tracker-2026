@@ -40,7 +40,8 @@
         <input type="email" id="email" class="form-control" placeholder="guardian@email.com">
       </div>
       <button onclick="runSearch()" id="btn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Check Status</button>
-      <div id="error" class="text-danger mt-3 text-center hidden"></div>
+      
+      <div id="error" class="alert alert-warning mt-3 text-center hidden" style="font-size: 0.9rem;"></div>
     </div>
   </div>
 
@@ -54,6 +55,7 @@
   </div>
 
   <script>
+    // ⬇️ YOUR PERSONAL SCRIPT URL ⬇️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNBzYcPxE3U-rTGKSqU9IgTYdjJP2glEXsnBMWmx3gQKA08OfaXNK9VaXGkz1U4zzx/exec";
 
     function resetSearch() {
@@ -64,15 +66,20 @@
       document.getElementById('content').innerHTML = '';
     }
 
-    // Since we are using a text fetch, we need to parse the JSONP response manually
-    function parseJsonp(text) {
-        // The text looks like: receiveData({...})
-        // We strip the function name and parentheses to get just the JSON
-        const match = text.match(/receiveData\((.*)\)/);
-        if (match && match[1]) {
-            return JSON.parse(match[1]);
-        }
-        return null;
+    window.receiveData = function(results) {
+      const scriptTag = document.getElementById('jsonp_loader');
+      if(scriptTag) scriptTag.remove(); 
+      render(results);
+    };
+
+    function manualFallback() {
+      // This function opens the Google Script directly in a new tab.
+      // This bypasses ALL cookie bugs because it's a direct visit, not an embed.
+      const dob = document.getElementById('dob').value;
+      const email = document.getElementById('email').value;
+      const safeDob = encodeURIComponent(dob);
+      const safeEmail = encodeURIComponent(email);
+      window.open(`${SCRIPT_URL}?dob=${safeDob}&email=${safeEmail}`, '_blank');
     }
 
     function runSearch() {
@@ -87,32 +94,29 @@
       btn.innerText = "Searching...";
       errBox.classList.add('hidden');
 
+      const oldScript = document.getElementById('jsonp_loader');
+      if(oldScript) oldScript.remove();
+
+      // Try the seamless method first
       const safeDob = encodeURIComponent(dob);
       const safeEmail = encodeURIComponent(email);
+      const script = document.createElement('script');
+      script.id = 'jsonp_loader';
+      script.src = `${SCRIPT_URL}?callback=receiveData&dob=${safeDob}&email=${safeEmail}`;
       
-      // PROXY TRICK: 
-      // We send the request through a public proxy.
-      // The proxy visits Google for us (without our cookies) and sends back the text.
-      const targetUrl = `${SCRIPT_URL}?callback=receiveData&dob=${safeDob}&email=${safeEmail}`;
-      const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+      // If it fails (Cookie Bug), show the "Safety Valve" button
+      script.onerror = function() {
+        btn.disabled = false;
+        btn.innerText = "Check Status";
+        errBox.innerHTML = `
+          <strong>Connection Blocked</strong><br>
+          Your browser settings (or multiple Google logins) are preventing a direct connection.<br><br>
+          <button onclick="manualFallback()" class="btn btn-outline-dark btn-sm fw-bold w-100">Click here to view results securely ↗</button>
+        `;
+        errBox.classList.remove('hidden');
+      };
 
-      fetch(proxyUrl)
-        .then(response => response.text())
-        .then(text => {
-            const data = parseJsonp(text);
-            if (data) {
-                render(data);
-            } else {
-                throw new Error("Invalid response");
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            btn.disabled = false;
-            btn.innerText = "Check Status";
-            errBox.innerHTML = "<strong>Connection Error.</strong><br>Could not retrieve data. Please try again later.";
-            errBox.classList.remove('hidden');
-        });
+      document.body.appendChild(script);
     }
 
     function render(results) {
@@ -121,6 +125,8 @@
       if (!results || results.length === 0) {
         document.getElementById('error').innerHTML = "No matching student found. Please check your details.";
         document.getElementById('error').classList.remove('hidden');
+        document.getElementById('error').classList.remove('alert-warning');
+        document.getElementById('error').classList.add('text-danger');
         return;
       }
 
@@ -130,13 +136,7 @@
 
       results.forEach(s => {
         const professionalLabels = { "Code of Conduct": "Code of Conduct", "Attendance": "BEAM Discovery Attendance Policy", "Liability Waiver": "Liability Releases", "Media Release": "Media Release", "Data Consent": "Data Consent Release", "Brilliant": "Brilliant.org Consent", "Meningitis": "Meningitis Form (Summer Away ONLY)", "Report Card": "7th Grade Report Card (Summer Away ONLY)", "Parent Med": "Parent Medical Release", "Phys Med": "Physician's Medical Release", "Immuno": "Immunization Record", "Ins Front": "Insurance Card (Front)", "Ins Back": "Insurance Card (Back)" };
-        const surveyForms = ["Liability Waiver", "Media Release", "Code of Conduct", "Data Consent", "Brilliant", "Attendance"];
-        const uploadForms = ["Meningitis", "Report Card", "Parent Med", "Phys Med", "Immuno", "Ins Front", "Ins Back"];
-
-        const missingSurvey = s.details.filter(d => d.status !== 'Submitted' && surveyForms.includes(d.name)).length;
-        const missingUpload = s.details.filter(d => d.status !== 'Submitted' && uploadForms.includes(d.name)).length;
-        const isFullyComplete = (missingSurvey === 0 && missingUpload === 0);
-
+        
         let progressClass = "progress-inprogress";
         if (s.overall.toLowerCase().includes("complete")) progressClass = "progress-complete";
         if (s.overall.toLowerCase().includes("not started")) progressClass = "progress-notstarted";
@@ -146,7 +146,6 @@
         if (s.overall !== "Complete" && s.overall !== "Confirmed") {
             html += `<div class="overall-box text-center ${progressClass}">Registration Status: ${s.overall}</div>`;
         }
-        
         html += `<p class="timestamp">Status as of: ${dateStr}, 6:00 AM EST</p>`;
         html += `<table class="table table-sm">`;
         s.details.forEach(d => {
@@ -154,15 +153,6 @@
             html += `<tr><td class="doc-name">${professionalLabels[d.name] || d.name}</td><td class="${statusClass} text-end">${d.status}</td></tr>`;
         });
         html += `</table>`;
-
-        if (!isFullyComplete) {
-            html += `<div class="btn-submit-group shadow-sm"><p class="text-center fw-bold text-dark mb-3">Next Steps:</p>`;
-            if (missingSurvey > 0) html += `<a href="https://www.surveymonkey.com/r/R3PW5S8" target="_blank" class="btn btn-danger btn-action w-100 shadow-sm">Fill missing consent forms</a>`;
-            if (missingUpload > 0) html += `<a href="https://www.surveymonkey.com/r/9GYMKBM" target="_blank" class="btn btn-warning btn-action w-100 shadow-sm text-dark">Upload missing documents</a>`;
-            html += `</div>`;
-        } else {
-            html += `<div class="alert alert-success mt-4 text-center border-0 shadow-sm">🎉 Registration is complete.</div>`;
-        }
       });
 
       document.getElementById('content').innerHTML = html;
