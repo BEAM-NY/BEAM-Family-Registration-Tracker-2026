@@ -1,25 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <base target="_top">
   <title>BEAM Student Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f4f7f9; padding: 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f4f7f9; padding: 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; transition: all 0.3s ease; }
     .hidden { display: none; }
     .card { border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 600px; margin: auto; background: white; }
-    .card-header { background: #004a99; color: white; text-align: center; padding: 25px; border-radius: 12px 12px 0 0; }
+    .card-header { background: #004a99; color: white; padding: 20px; border-radius: 12px 12px 0 0; position: relative; }
     
+    /* Language Toggle Styling */
+    .lang-toggle { position: absolute; top: 15px; right: 15px; }
+    .form-select-sm { background-color: rgba(255,255,255,0.9); border: none; font-weight: bold; color: #004a99; cursor: pointer; }
+
     .status-Submitted { color: #198754 !important; font-weight: bold; }
     .status-Not-Submitted { color: #dc3545 !important; font-weight: bold; }
     
-    .section-box { border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #ccc; background: #fff; }
-    .section-forms { border-left-color: #0d6efd; background: #f0f7ff; } /* Blue for Forms */
-    .section-uploads { border-left-color: #fd7e14; background: #fff8f0; } /* Orange for Uploads */
+    .section-box { border-radius: 8px; padding: 15px; margin-bottom: 15px; border-inline-start: 5px solid #ccc; background: #fff; }
+    .section-forms { border-inline-start-color: #0d6efd; background: #f0f7ff; } 
+    .section-uploads { border-inline-start-color: #fd7e14; background: #fff8f0; } 
 
     .section-title { font-weight: bold; color: #555; margin-bottom: 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
-
     .btn-action { margin-top: 5px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; padding: 8px 12px; }
     .table td { padding: 10px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
     .doc-name { color: #444; font-size: 0.95rem; }
@@ -27,22 +30,35 @@
     .doc-link:hover { color: #002a5c; border-bottom: 1px solid #002a5c; }
     
     .success-banner { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
+    
+    /* Arabic RTL Support */
+    body[dir="rtl"] { text-align: right; }
+    body[dir="rtl"] .text-end { text-align: left !important; }
   </style>
 </head>
 <body>
 
   <div id="searchBox" class="card p-0">
     <div class="card-header">
-      <h3 class="mb-1">BEAM Student Portal</h3>
-      <p class="mb-0 small">Check your registration progress and missing forms here</p>
+      <div class="lang-toggle">
+        <select id="langSelect" class="form-select form-select-sm" onchange="changeLanguage()">
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="zh">🇨🇳 中文</option>
+          <option value="ar">🇸🇦 العربية</option>
+        </select>
+      </div>
+
+      <h3 class="mb-1 mt-2" id="t-title">BEAM Student Portal</h3>
+      <p class="mb-0 small" id="t-subtitle">Check your registration progress and missing forms here</p>
     </div>
     <div class="card-body p-4">
       <div class="mb-3">
-        <label class="form-label fw-bold">Student Birthdate</label>
+        <label class="form-label fw-bold" id="t-dob">Student Birthdate</label>
         <input type="date" id="dob" class="form-control">
       </div>
       <div class="mb-4">
-        <label class="form-label fw-bold">Email</label>
+        <label class="form-label fw-bold" id="t-email">Email</label>
         <input type="email" id="email" class="form-control" placeholder="guardian@email.com">
       </div>
       <button onclick="runSearch()" id="btn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Check Status</button>
@@ -53,16 +69,184 @@
 
   <div id="results" class="hidden">
     <div class="card p-0">
+      <div class="card-header">
+         <div class="lang-toggle">
+          <select id="langSelectResult" class="form-select form-select-sm" onchange="syncLang(this)">
+            <option value="en">🇺🇸 English</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="zh">🇨🇳 中文</option>
+            <option value="ar">🇸🇦 العربية</option>
+          </select>
+        </div>
+        <h3 class="mb-1 mt-2" id="t-res-title">Student Portal</h3>
+      </div>
       <div class="card-body p-4">
         <div id="content"></div>
-        <button onclick="resetSearch()" class="btn btn-link w-100 mt-3 text-decoration-none">← Search Another Student</button>
+        <button onclick="resetSearch()" id="t-back" class="btn btn-link w-100 mt-3 text-decoration-none">← Search Another Student</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ⬇️ UPDATE THIS URL IF YOU DEPLOYED A NEW SCRIPT ⬇️
+    // ⬇️ YOUR SCRIPT URL ⬇️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNBzYcPxE3U-rTGKSqU9IgTYdjJP2glEXsnBMWmx3gQKA08OfaXNK9VaXGkz1U4zzx/exec";
+
+    // --- TRANSLATION DATABASE ---
+    const TRANSLATIONS = {
+      en: {
+        title: "BEAM Student Portal",
+        subtitle: "Check your registration progress and missing forms here",
+        dob: "Student Birthdate",
+        email: "Email",
+        btnCheck: "Check Status",
+        btnSearching: "Searching...",
+        errorConn: "Connection Issue. We couldn't verify automatically.",
+        errorNoStudent: "No matching student found. Please check your details.",
+        manualBtn: "Launch Secure Portal ↗",
+        statusFor: "Status for",
+        success: "🎉 Registration is complete!",
+        timestamp: "Status as of",
+        sectForms: "Registration Forms",
+        sectUploads: "Document Uploads",
+        groupedForms: "Student Information and Consent Forms",
+        btnForms: "Complete Forms Now",
+        btnUploads: "Upload Missing Documents",
+        btnBack: "← Search Another Student",
+        submitted: "Submitted",
+        notSubmitted: "Not Submitted",
+        docs: {
+          "Parent Med": "Parent Medical Release",
+          "Phys Med": "Physician's Medical Release",
+          "Meningitis": "Meningitis Form",
+          "Report Card": "7th Grade Report Card",
+          "Immuno": "Immunization Record",
+          "Ins Front": "Insurance Card (Front)",
+          "Ins Back": "Insurance Card (Back)"
+        }
+      },
+      es: {
+        title: "Portal Estudiantil BEAM",
+        subtitle: "Verifique su progreso de registro y formularios faltantes",
+        dob: "Fecha de Nacimiento del Estudiante",
+        email: "Correo Electrónico",
+        btnCheck: "Verificar Estado",
+        btnSearching: "Buscando...",
+        errorConn: "Problema de conexión. No pudimos verificar automáticamente.",
+        errorNoStudent: "No se encontró ningún estudiante. Verifique sus datos.",
+        manualBtn: "Abrir Portal Seguro ↗",
+        statusFor: "Estado de",
+        success: "🎉 ¡El registro está completo!",
+        timestamp: "Estado al",
+        sectForms: "Formularios de Registro",
+        sectUploads: "Carga de Documentos",
+        groupedForms: "Información del Estudiante y Consentimientos",
+        btnForms: "Completar Formularios Ahora",
+        btnUploads: "Subir Documentos Faltantes",
+        btnBack: "← Buscar Otro Estudiante",
+        submitted: "Enviado",
+        notSubmitted: "No Enviado",
+        docs: {
+          "Parent Med": "Autorización Médica de Padres",
+          "Phys Med": "Autorización Médica del Médico",
+          "Meningitis": "Formulario de Meningitis",
+          "Report Card": "Boleta de Calificaciones (7º Grado)",
+          "Immuno": "Registro de Inmunización",
+          "Ins Front": "Tarjeta de Seguro (Frente)",
+          "Ins Back": "Tarjeta de Seguro (Dorso)"
+        }
+      },
+      zh: {
+        title: "BEAM 学生门户",
+        subtitle: "在此查看您的注册进度和缺失的表格",
+        dob: "学生出生日期",
+        email: "电子邮件",
+        btnCheck: "查看状态",
+        btnSearching: "搜索中...",
+        errorConn: "连接问题。我们无法自动验证。",
+        errorNoStudent: "未找到匹配的学生。请检查您的详细信息。",
+        manualBtn: "启动安全门户 ↗",
+        statusFor: "状态：",
+        success: "🎉 注册已完成！",
+        timestamp: "状态截至",
+        sectForms: "注册表格",
+        sectUploads: "文档上传",
+        groupedForms: "学生信息和同意书",
+        btnForms: "立即填写表格",
+        btnUploads: "上传缺失文档",
+        btnBack: "← 搜索另一名学生",
+        submitted: "已提交",
+        notSubmitted: "未提交",
+        docs: {
+          "Parent Med": "家长医疗授权书",
+          "Phys Med": "医生医疗授权书",
+          "Meningitis": "脑膜炎表格",
+          "Report Card": "七年级成绩单",
+          "Immuno": "免疫接种记录",
+          "Ins Front": "保险卡（正面）",
+          "Ins Back": "保险卡（背面）"
+        }
+      },
+      ar: {
+        title: "بوابة طلاب BEAM",
+        subtitle: "تحقق من تقدم التسجيل والنماذج المفقودة هنا",
+        dob: "تاريخ ميلاد الطالب",
+        email: "البريد الإلكتروني",
+        btnCheck: "التحقق من الحالة",
+        btnSearching: "جاري البحث...",
+        errorConn: "مشكلة في الاتصال. تعذر التحقق تلقائيًا.",
+        errorNoStudent: "لم يتم العثور على طالب مطابق. يرجى التحقق من البيانات.",
+        manualBtn: "تشغيل البوابة الآمنة ↗",
+        statusFor: "الحالة لـ",
+        success: "🎉 اكتمل التسجيل!",
+        timestamp: "الحالة اعتبارًا من",
+        sectForms: "نماذج التسجيل",
+        sectUploads: "تحميل المستندات",
+        groupedForms: "معلومات الطالب ونماذج الموافقة",
+        btnForms: "إكمال النماذج الآن",
+        btnUploads: "تحميل المستندات المفقودة",
+        btnBack: "← البحث عن طالب آخر",
+        submitted: "تم الإرسال",
+        notSubmitted: "لم يتم الإرسال",
+        docs: {
+          "Parent Med": "الإفراج الطبي من الوالدين",
+          "Phys Med": "الإفراج الطبي من الطبيب",
+          "Meningitis": "نموذج التهاب السحايا",
+          "Report Card": "تقرير درجات الصف السابع",
+          "Immuno": "سجل التطعيمات",
+          "Ins Front": "بطاقة التأمين (الأمام)",
+          "Ins Back": "بطاقة التأمين (الخلف)"
+        }
+      }
+    };
+
+    let currentLang = 'en';
+    let currentResults = null; // Store results to re-render on lang change
+
+    function syncLang(el) {
+      document.getElementById('langSelect').value = el.value;
+      document.getElementById('langSelectResult').value = el.value;
+      changeLanguage();
+    }
+
+    function changeLanguage() {
+      currentLang = document.getElementById('langSelect').value;
+      const t = TRANSLATIONS[currentLang];
+      
+      // RTL Support for Arabic
+      document.body.dir = (currentLang === 'ar') ? 'rtl' : 'ltr';
+
+      // Update Static Labels
+      document.getElementById('t-title').innerText = t.title;
+      document.getElementById('t-res-title').innerText = t.title;
+      document.getElementById('t-subtitle').innerText = t.subtitle;
+      document.getElementById('t-dob').innerText = t.dob;
+      document.getElementById('t-email').innerText = t.email;
+      document.getElementById('btn').innerText = t.btnCheck;
+      document.getElementById('t-back').innerText = t.btnBack;
+
+      // Re-render results if they exist
+      if (currentResults) render(currentResults);
+    }
 
     function resetSearch() {
       document.getElementById('dob').value = '';
@@ -70,11 +254,13 @@
       document.getElementById('results').classList.add('hidden');
       document.getElementById('searchBox').classList.remove('hidden');
       document.getElementById('content').innerHTML = '';
+      currentResults = null;
     }
 
     window.receiveData = function(results) {
       const scriptTag = document.getElementById('jsonp_loader');
       if(scriptTag) scriptTag.remove(); 
+      currentResults = results;
       render(results);
     };
 
@@ -91,11 +277,12 @@
       const email = document.getElementById('email').value;
       const btn = document.getElementById('btn');
       const errBox = document.getElementById('error');
+      const t = TRANSLATIONS[currentLang];
       
       if(!dob || !email) { alert("Please enter both DOB and Email."); return; }
       
       btn.disabled = true;
-      btn.innerText = "Searching...";
+      btn.innerText = t.btnSearching;
       errBox.classList.add('hidden');
 
       const oldScript = document.getElementById('jsonp_loader');
@@ -108,8 +295,8 @@
       
       script.onerror = function() {
         btn.disabled = false;
-        btn.innerText = "Check Status";
-        errBox.innerHTML = `<strong>Connection Issue</strong><br>We couldn't verify automatically.<br><button onclick="manualFallback()" class="btn btn-dark btn-sm fw-bold w-100 mt-2">Launch Secure Portal ↗</button>`;
+        btn.innerText = t.btnCheck;
+        errBox.innerHTML = `<strong>${t.errorConn}</strong><br><button onclick="manualFallback()" class="btn btn-dark btn-sm fw-bold w-100 mt-2">${t.manualBtn}</button>`;
         errBox.classList.remove('hidden');
       };
 
@@ -117,10 +304,12 @@
     }
 
     function render(results) {
+      const t = TRANSLATIONS[currentLang];
       document.getElementById('btn').disabled = false;
-      document.getElementById('btn').innerText = "Check Status";
+      document.getElementById('btn').innerText = t.btnCheck;
+
       if (!results || results.length === 0) {
-        document.getElementById('error').innerHTML = "No matching student found. Please check your details.";
+        document.getElementById('error').innerHTML = t.errorNoStudent;
         document.getElementById('error').classList.remove('hidden');
         document.getElementById('error').classList.remove('alert-warning');
         document.getElementById('error').classList.add('text-danger');
@@ -132,89 +321,65 @@
       let html = '';
 
       results.forEach(s => {
-        // --- LOGIC: Grouping Consent Forms ---
-        // These are the specific items we want to collapse into one line
         const surveyItems = ["Liability Waiver", "Media Release", "Code of Conduct", "Data Consent", "Attendance"];
-        
-        // Filter out the survey items from the main list to process them separately
         const consentData = s.details.filter(d => surveyItems.includes(d.name));
-        const documentData = s.details.filter(d => !surveyItems.includes(d.name)); // Includes Medicals, Meningitis, Report Card
+        const documentData = s.details.filter(d => !surveyItems.includes(d.name));
 
-        // Determine Consent Group Status
         const missingConsents = consentData.filter(d => d.status !== "Submitted").length;
-        const consentGroupStatus = missingConsents === 0 ? "Submitted" : "Not Submitted";
+        const consentGroupStatus = missingConsents === 0 ? t.submitted : t.notSubmitted;
         const consentGroupClass = missingConsents === 0 ? "status-Submitted" : "status-Not-Submitted";
 
-        // Determine Overall Completeness
         const missingDocs = documentData.filter(d => d.status !== "Submitted").length;
         const isFullyComplete = (missingConsents === 0 && missingDocs === 0);
 
-        // --- RENDER HEADER ---
-        html += `<h4 class="text-primary fw-bold text-center mb-1">Status for ${s.firstName}</h4>`;
+        html += `<h4 class="text-primary fw-bold text-center mb-1">${t.statusFor} ${s.firstName}</h4>`;
         html += `<div class="text-center mb-3"><span class="badge bg-secondary rounded-pill">${s.program}</span></div>`;
 
-        // --- SUCCESS BANNER (AT TOP) ---
         if (isFullyComplete) {
-           html += `<div class="success-banner">🎉 Registration is complete!</div>`;
+           html += `<div class="success-banner">${t.success}</div>`;
         }
 
-        html += `<p class="timestamp">Status as of: ${dateStr}, 6:00 AM EST</p>`;
+        html += `<p class="timestamp text-center">${t.timestamp}: ${dateStr}</p>`;
 
-        // --- SECTION 1: CONSENT FORMS (Blue Box) ---
+        // SECTION 1: CONSENT FORMS
         html += `<div class="section-box section-forms">`;
-        html += `<div class="section-title">Registration Forms</div>`;
+        html += `<div class="section-title">${t.sectForms}</div>`;
         html += `<table class="table table-sm mb-0">`;
-        
-        // Render the single grouped line
         html += `<tr>
-                   <td class="doc-name">Student Information and Consent Forms</td>
+                   <td class="doc-name">${t.groupedForms}</td>
                    <td class="${consentGroupClass} text-end">${consentGroupStatus}</td>
                  </tr>`;
         html += `</table>`;
-
-        // If missing, show button inside the box
         if (missingConsents > 0) {
-           html += `<a href="https://www.surveymonkey.com/r/R3PW5S8" target="_blank" class="btn btn-primary btn-action w-100 mt-2">Complete Forms Now</a>`;
+           html += `<a href="https://www.surveymonkey.com/r/R3PW5S8" target="_blank" class="btn btn-primary btn-action w-100 mt-2">${t.btnForms}</a>`;
         }
-        html += `</div>`; // End Blue Box
+        html += `</div>`;
 
-        // --- SECTION 2: DOCUMENTS (Orange Box) ---
+        // SECTION 2: DOCUMENTS
         html += `<div class="section-box section-uploads">`;
-        html += `<div class="section-title">Document Uploads</div>`;
+        html += `<div class="section-title">${t.sectUploads}</div>`;
         html += `<table class="table table-sm mb-0">`;
         
         documentData.forEach(d => {
-            let displayName = d.name;
+            let displayName = t.docs[d.name] || d.name; // Translate doc name
             const statusClass = d.status === 'Submitted' ? 'status-Submitted' : 'status-Not-Submitted';
-            
-            // Hyperlink Logic for Medical Forms
+            const statusText = d.status === 'Submitted' ? t.submitted : t.notSubmitted; // Translate status
+
+            // Hyperlinks
             if (d.name === "Parent Med") {
-              displayName = `<a href="https://drive.google.com/file/d/1-KZJNbLbuSCUiDbQdtnxb_-jcrZT2JRe/view?usp=drive_link" target="_blank" class="doc-link">Parent Medical Release</a>`;
+              displayName = `<a href="https://drive.google.com/file/d/1-KZJNbLbuSCUiDbQdtnxb_-jcrZT2JRe/view?usp=drive_link" target="_blank" class="doc-link">${displayName}</a>`;
             } else if (d.name === "Phys Med") {
-              displayName = `<a href="https://drive.google.com/file/d/1hFlb-ae7Vl5kGwakqwoYF-TB4nQOynmY/view?usp=drive_link" target="_blank" class="doc-link">Physician's Medical Release</a>`;
-            } else {
-               // Clean up other names
-               const labelMap = { 
-                 "Meningitis": "Meningitis Form", 
-                 "Report Card": "7th Grade Report Card", 
-                 "Immuno": "Immunization Record", 
-                 "Ins Front": "Insurance Card (Front)", 
-                 "Ins Back": "Insurance Card (Back)"
-               };
-               displayName = labelMap[d.name] || d.name;
+              displayName = `<a href="https://drive.google.com/file/d/1hFlb-ae7Vl5kGwakqwoYF-TB4nQOynmY/view?usp=drive_link" target="_blank" class="doc-link">${displayName}</a>`;
             }
 
-            html += `<tr><td class="doc-name">${displayName}</td><td class="${statusClass} text-end">${d.status}</td></tr>`;
+            html += `<tr><td class="doc-name">${displayName}</td><td class="${statusClass} text-end">${statusText}</td></tr>`;
         });
         html += `</table>`;
 
-        // If missing docs, show button inside the box
         if (missingDocs > 0) {
-           html += `<a href="https://www.surveymonkey.com/r/9GYMKBM" target="_blank" class="btn btn-warning btn-action w-100 mt-2 text-dark">Upload Missing Documents</a>`;
+           html += `<a href="https://www.surveymonkey.com/r/9GYMKBM" target="_blank" class="btn btn-warning btn-action w-100 mt-2 text-dark">${t.btnUploads}</a>`;
         }
-        html += `</div>`; // End Orange Box
-        
-        html += `<hr class="my-4">`;
+        html += `</div><hr class="my-4">`;
       });
 
       document.getElementById('content').innerHTML = html;
