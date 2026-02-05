@@ -8,19 +8,25 @@
   <style>
     body { background-color: #f4f7f9; padding: 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .hidden { display: none; }
-    .card { border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 550px; margin: auto; background: white; }
+    .card { border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 600px; margin: auto; background: white; }
     .card-header { background: #004a99; color: white; text-align: center; padding: 25px; border-radius: 12px 12px 0 0; }
+    
     .status-Submitted { color: #198754 !important; font-weight: bold; }
     .status-Not-Submitted { color: #dc3545 !important; font-weight: bold; }
-    .progress-complete { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
-    .progress-inprogress { background: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
-    .progress-notstarted { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
-    .timestamp { font-style: italic; color: #777; font-size: 0.8rem; text-align: center; margin: 10px 0; }
-    .overall-box { border-radius: 8px; padding: 15px; margin: 15px 0; font-weight: bold; }
-    .btn-submit-group { margin-top: 20px; padding: 15px; background: #fffcf5; border: 1px solid #ffeeba; border-radius: 10px; }
-    .btn-action { margin-bottom: 12px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; padding: 10px; }
-    .table td { padding: 14px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    
+    .section-box { border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #ccc; background: #fff; }
+    .section-forms { border-left-color: #0d6efd; background: #f0f7ff; } /* Blue for Forms */
+    .section-uploads { border-left-color: #fd7e14; background: #fff8f0; } /* Orange for Uploads */
+
+    .section-title { font-weight: bold; color: #555; margin-bottom: 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .btn-action { margin-top: 5px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; padding: 8px 12px; }
+    .table td { padding: 10px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
     .doc-name { color: #444; font-size: 0.95rem; }
+    .doc-link { text-decoration: none; color: #004a99; font-weight: 500; border-bottom: 1px dotted #004a99; }
+    .doc-link:hover { color: #002a5c; border-bottom: 1px solid #002a5c; }
+    
+    .success-banner { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -28,11 +34,11 @@
   <div id="searchBox" class="card p-0">
     <div class="card-header">
       <h3 class="mb-1">BEAM Student Portal</h3>
-      <p class="mb-0 small">Check your registration progress</p>
+      <p class="mb-0 small">Check your registration progress and missing forms here</p>
     </div>
     <div class="card-body p-4">
       <div class="mb-3">
-        <label class="form-label fw-bold">Birthdate</label>
+        <label class="form-label fw-bold">Student Birthdate</label>
         <input type="date" id="dob" class="form-control">
       </div>
       <div class="mb-4">
@@ -49,13 +55,13 @@
     <div class="card p-0">
       <div class="card-body p-4">
         <div id="content"></div>
-        <button onclick="resetSearch()" class="btn btn-link w-100 mt-2 text-decoration-none">← Search Another Student</button>
+        <button onclick="resetSearch()" class="btn btn-link w-100 mt-3 text-decoration-none">← Search Another Student</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ⬇️ YOUR PERSONAL SCRIPT URL ⬇️
+    // ⬇️ UPDATE THIS URL IF YOU DEPLOYED A NEW SCRIPT ⬇️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNBzYcPxE3U-rTGKSqU9IgTYdjJP2glEXsnBMWmx3gQKA08OfaXNK9VaXGkz1U4zzx/exec";
 
     function resetSearch() {
@@ -75,14 +81,8 @@
     function manualFallback() {
       const dob = document.getElementById('dob').value;
       const email = document.getElementById('email').value;
-      const safeDob = encodeURIComponent(dob);
-      const safeEmail = encodeURIComponent(email);
-      const target = `${SCRIPT_URL}?dob=${safeDob}&email=${safeEmail}`;
-      
-      // THE FIX: This URL forces Google to ask "Which account?"
-      // This solves the /u/1/ redirect error you were seeing.
+      const target = `${SCRIPT_URL}?dob=${encodeURIComponent(dob)}&email=${encodeURIComponent(email)}`;
       const chooserUrl = `https://accounts.google.com/AccountChooser?continue=${encodeURIComponent(target)}`;
-      
       window.open(chooserUrl, '_blank');
     }
 
@@ -101,23 +101,15 @@
       const oldScript = document.getElementById('jsonp_loader');
       if(oldScript) oldScript.remove();
 
-      const safeDob = encodeURIComponent(dob);
-      const safeEmail = encodeURIComponent(email);
       const script = document.createElement('script');
       script.id = 'jsonp_loader';
-      // Added crossorigin to try and strip cookies early
       script.setAttribute('crossorigin', 'anonymous');
-      script.src = `${SCRIPT_URL}?callback=receiveData&dob=${safeDob}&email=${safeEmail}`;
+      script.src = `${SCRIPT_URL}?callback=receiveData&dob=${encodeURIComponent(dob)}&email=${encodeURIComponent(email)}`;
       
-      // ERROR HANDLING: If the automatic check fails...
       script.onerror = function() {
         btn.disabled = false;
         btn.innerText = "Check Status";
-        errBox.innerHTML = `
-          <strong>Connection Issue Detected</strong><br>
-          We couldn't verify your browser session automatically.<br><br>
-          <button onclick="manualFallback()" class="btn btn-dark btn-sm fw-bold w-100 py-2">Launch Secure Portal ↗</button>
-        `;
+        errBox.innerHTML = `<strong>Connection Issue</strong><br>We couldn't verify automatically.<br><button onclick="manualFallback()" class="btn btn-dark btn-sm fw-bold w-100 mt-2">Launch Secure Portal ↗</button>`;
         errBox.classList.remove('hidden');
       };
 
@@ -140,39 +132,89 @@
       let html = '';
 
       results.forEach(s => {
-        const professionalLabels = { "Code of Conduct": "Code of Conduct", "Attendance": "BEAM Discovery Attendance Policy", "Liability Waiver": "Liability Releases", "Media Release": "Media Release", "Data Consent": "Data Consent Release", "Brilliant": "Brilliant.org Consent", "Meningitis": "Meningitis Form (Summer Away ONLY)", "Report Card": "7th Grade Report Card (Summer Away ONLY)", "Parent Med": "Parent Medical Release", "Phys Med": "Physician's Medical Release", "Immuno": "Immunization Record", "Ins Front": "Insurance Card (Front)", "Ins Back": "Insurance Card (Back)" };
+        // --- LOGIC: Grouping Consent Forms ---
+        // These are the specific items we want to collapse into one line
+        const surveyItems = ["Liability Waiver", "Media Release", "Code of Conduct", "Data Consent", "Attendance"];
         
-        let progressClass = "progress-inprogress";
-        if (s.overall.toLowerCase().includes("complete")) progressClass = "progress-complete";
-        if (s.overall.toLowerCase().includes("not started")) progressClass = "progress-notstarted";
+        // Filter out the survey items from the main list to process them separately
+        const consentData = s.details.filter(d => surveyItems.includes(d.name));
+        const documentData = s.details.filter(d => !surveyItems.includes(d.name)); // Includes Medicals, Meningitis, Report Card
 
-        html += `<h4 class="text-primary fw-bold text-center mb-1">${s.alias}</h4>`;
-        html += `<div class="text-center"><span class="badge bg-primary mb-2 px-3 rounded-pill">${s.program}</span></div>`;
-        if (s.overall !== "Complete" && s.overall !== "Confirmed") {
-            html += `<div class="overall-box text-center ${progressClass}">Registration Status: ${s.overall}</div>`;
+        // Determine Consent Group Status
+        const missingConsents = consentData.filter(d => d.status !== "Submitted").length;
+        const consentGroupStatus = missingConsents === 0 ? "Submitted" : "Not Submitted";
+        const consentGroupClass = missingConsents === 0 ? "status-Submitted" : "status-Not-Submitted";
+
+        // Determine Overall Completeness
+        const missingDocs = documentData.filter(d => d.status !== "Submitted").length;
+        const isFullyComplete = (missingConsents === 0 && missingDocs === 0);
+
+        // --- RENDER HEADER ---
+        html += `<h4 class="text-primary fw-bold text-center mb-1">Status for ${s.firstName}</h4>`;
+        html += `<div class="text-center mb-3"><span class="badge bg-secondary rounded-pill">${s.program}</span></div>`;
+
+        // --- SUCCESS BANNER (AT TOP) ---
+        if (isFullyComplete) {
+           html += `<div class="success-banner">🎉 Registration is complete!</div>`;
         }
+
         html += `<p class="timestamp">Status as of: ${dateStr}, 6:00 AM EST</p>`;
-        html += `<table class="table table-sm">`;
-        s.details.forEach(d => {
+
+        // --- SECTION 1: CONSENT FORMS (Blue Box) ---
+        html += `<div class="section-box section-forms">`;
+        html += `<div class="section-title">Registration Forms</div>`;
+        html += `<table class="table table-sm mb-0">`;
+        
+        // Render the single grouped line
+        html += `<tr>
+                   <td class="doc-name">Student Information and Consent Forms</td>
+                   <td class="${consentGroupClass} text-end">${consentGroupStatus}</td>
+                 </tr>`;
+        html += `</table>`;
+
+        // If missing, show button inside the box
+        if (missingConsents > 0) {
+           html += `<a href="https://www.surveymonkey.com/r/R3PW5S8" target="_blank" class="btn btn-primary btn-action w-100 mt-2">Complete Forms Now</a>`;
+        }
+        html += `</div>`; // End Blue Box
+
+        // --- SECTION 2: DOCUMENTS (Orange Box) ---
+        html += `<div class="section-box section-uploads">`;
+        html += `<div class="section-title">Document Uploads</div>`;
+        html += `<table class="table table-sm mb-0">`;
+        
+        documentData.forEach(d => {
+            let displayName = d.name;
             const statusClass = d.status === 'Submitted' ? 'status-Submitted' : 'status-Not-Submitted';
-            html += `<tr><td class="doc-name">${professionalLabels[d.name] || d.name}</td><td class="${statusClass} text-end">${d.status}</td></tr>`;
+            
+            // Hyperlink Logic for Medical Forms
+            if (d.name === "Parent Med") {
+              displayName = `<a href="https://drive.google.com/file/d/1-KZJNbLbuSCUiDbQdtnxb_-jcrZT2JRe/view?usp=drive_link" target="_blank" class="doc-link">Parent Medical Release</a>`;
+            } else if (d.name === "Phys Med") {
+              displayName = `<a href="https://drive.google.com/file/d/1hFlb-ae7Vl5kGwakqwoYF-TB4nQOynmY/view?usp=drive_link" target="_blank" class="doc-link">Physician's Medical Release</a>`;
+            } else {
+               // Clean up other names
+               const labelMap = { 
+                 "Meningitis": "Meningitis Form", 
+                 "Report Card": "7th Grade Report Card", 
+                 "Immuno": "Immunization Record", 
+                 "Ins Front": "Insurance Card (Front)", 
+                 "Ins Back": "Insurance Card (Back)"
+               };
+               displayName = labelMap[d.name] || d.name;
+            }
+
+            html += `<tr><td class="doc-name">${displayName}</td><td class="${statusClass} text-end">${d.status}</td></tr>`;
         });
         html += `</table>`;
-        
-        const surveyForms = ["Liability Waiver", "Media Release", "Code of Conduct", "Data Consent", "Brilliant", "Attendance"];
-        const uploadForms = ["Meningitis", "Report Card", "Parent Med", "Phys Med", "Immuno", "Ins Front", "Ins Back"];
-        const missingSurvey = s.details.filter(d => d.status !== 'Submitted' && surveyForms.includes(d.name)).length;
-        const missingUpload = s.details.filter(d => d.status !== 'Submitted' && uploadForms.includes(d.name)).length;
-        const isFullyComplete = (missingSurvey === 0 && missingUpload === 0);
 
-        if (!isFullyComplete) {
-            html += `<div class="btn-submit-group shadow-sm"><p class="text-center fw-bold text-dark mb-3">Next Steps:</p>`;
-            if (missingSurvey > 0) html += `<a href="https://www.surveymonkey.com/r/R3PW5S8" target="_blank" class="btn btn-danger btn-action w-100 shadow-sm">Fill missing consent forms</a>`;
-            if (missingUpload > 0) html += `<a href="https://www.surveymonkey.com/r/9GYMKBM" target="_blank" class="btn btn-warning btn-action w-100 shadow-sm text-dark">Upload missing documents</a>`;
-            html += `</div>`;
-        } else {
-            html += `<div class="alert alert-success mt-4 text-center border-0 shadow-sm">🎉 Registration is complete.</div>`;
+        // If missing docs, show button inside the box
+        if (missingDocs > 0) {
+           html += `<a href="https://www.surveymonkey.com/r/9GYMKBM" target="_blank" class="btn btn-warning btn-action w-100 mt-2 text-dark">Upload Missing Documents</a>`;
         }
+        html += `</div>`; // End Orange Box
+        
+        html += `<hr class="my-4">`;
       });
 
       document.getElementById('content').innerHTML = html;
