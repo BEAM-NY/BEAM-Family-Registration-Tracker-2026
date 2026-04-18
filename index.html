@@ -20,6 +20,7 @@
     
     .section-box { border-radius: 8px; padding: 15px; margin-bottom: 15px; border-inline-start: 5px solid #ccc; background: #fff; }
     .section-forms { border-inline-start-color: #0d6efd; background: #f0f7ff; } 
+    .section-extra { border-inline-start-color: #6f42c1; background: #f8f5ff; } 
     .section-uploads { border-inline-start-color: #fd7e14; background: #fff8f0; } 
 
     .section-title { font-weight: bold; color: #555; margin-bottom: 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -107,9 +108,11 @@
         success: "🎉 Registration is complete!",
         timestamp: "Status as of",
         sectForms: "Registration Forms",
+        sectExtra: "Additional Acknowledgements",
         sectUploads: "Document Uploads",
         groupedForms: "Student Information and Consent Forms",
         btnForms: "Complete Forms Now",
+        btnExtra: "Complete Acknowledgement Here",
         btnUploads: "Upload Missing Documents",
         btnBack: "← Search Another Student",
         submitted: "Submitted",
@@ -138,9 +141,11 @@
         success: "🎉 ¡El registro está completo!",
         timestamp: "Estado al",
         sectForms: "Formularios de Registro",
+        sectExtra: "Reconocimientos Adicionales",
         sectUploads: "Carga de Documentos",
         groupedForms: "Información del Estudiante y Consentimientos",
         btnForms: "Completar Formularios Ahora",
+        btnExtra: "Completar Reconocimiento Aquí",
         btnUploads: "Subir Documentos Faltantes",
         btnBack: "← Buscar Otro Estudiante",
         submitted: "Enviado",
@@ -169,9 +174,11 @@
         success: "🎉 注册已完成！",
         timestamp: "状态截至",
         sectForms: "注册表格",
+        sectExtra: "额外确认书",
         sectUploads: "文档上传",
         groupedForms: "学生信息和同意书",
         btnForms: "立即填写表格",
+        btnExtra: "在此完成确认",
         btnUploads: "上传缺失文档",
         btnBack: "← 搜索另一名学生",
         submitted: "已提交",
@@ -200,9 +207,11 @@
         success: "🎉 اكتمل التسجيل!",
         timestamp: "الحالة اعتبارًا من",
         sectForms: "نماذج التسجيل",
+        sectExtra: "إقرارات إضافية",
         sectUploads: "تحميل المستندات",
         groupedForms: "معلومات الطالب ونماذج الموافقة",
         btnForms: "إكمال النماذج الآن",
+        btnExtra: "أكمل الإقرار هنا",
         btnUploads: "تحميل المستندات المفقودة",
         btnBack: "← البحث عن طالب آخر",
         submitted: "تم الإرسال",
@@ -317,20 +326,27 @@
       }
 
       const today = new Date();
-      const dateStr = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
+      // UPDATED LINE: Added " 6:00 AM EST" right to the end of the date string
+      const dateStr = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear() + ' 6:00 AM EST';
       let html = '';
 
       results.forEach(s => {
+        // Grouping the items
         const surveyItems = ["Liability Waiver", "Media Release", "Code of Conduct", "Data Consent", "Attendance"];
+        const extraItems = ["Meningitis"]; 
+        
         const consentData = s.details.filter(d => surveyItems.includes(d.name));
-        const documentData = s.details.filter(d => !surveyItems.includes(d.name));
+        const extraData = s.details.filter(d => extraItems.includes(d.name));
+        const documentData = s.details.filter(d => !surveyItems.includes(d.name) && !extraItems.includes(d.name));
 
         const missingConsents = consentData.filter(d => d.status !== "Submitted").length;
+        const missingExtra = extraData.filter(d => d.status !== "Submitted").length;
+        const missingDocs = documentData.filter(d => d.status !== "Submitted").length;
+
         const consentGroupStatus = missingConsents === 0 ? t.submitted : t.notSubmitted;
         const consentGroupClass = missingConsents === 0 ? "status-Submitted" : "status-Not-Submitted";
 
-        const missingDocs = documentData.filter(d => d.status !== "Submitted").length;
-        const isFullyComplete = (missingConsents === 0 && missingDocs === 0);
+        const isFullyComplete = (missingConsents === 0 && missingExtra === 0 && missingDocs === 0);
 
         html += `<h4 class="text-primary fw-bold text-center mb-1">${t.statusFor} ${s.firstName}</h4>`;
         html += `<div class="text-center mb-3"><span class="badge bg-secondary rounded-pill">${s.program}</span></div>`;
@@ -355,7 +371,25 @@
         }
         html += `</div>`;
 
-        // SECTION 2: DOCUMENTS
+        // SECTION 2: ADDITIONAL ACKNOWLEDGEMENTS 
+        if (extraData.length > 0) {
+          html += `<div class="section-box section-extra">`;
+          html += `<div class="section-title">${t.sectExtra}</div>`;
+          html += `<table class="table table-sm mb-0">`;
+          extraData.forEach(d => {
+              let displayName = t.docs[d.name] || d.name;
+              const statusClass = d.status === 'Submitted' ? 'status-Submitted' : 'status-Not-Submitted';
+              const statusText = d.status === 'Submitted' ? t.submitted : t.notSubmitted;
+              html += `<tr><td class="doc-name">${displayName}</td><td class="${statusClass} text-end">${statusText}</td></tr>`;
+          });
+          html += `</table>`;
+          if (missingExtra > 0) {
+             html += `<a href="https://www.surveymonkey.com/r/9GYMKBM" target="_blank" class="btn btn-info btn-action w-100 mt-2 text-dark" style="background-color: #e0cffc; border: none;">${t.btnExtra}</a>`;
+          }
+          html += `</div>`;
+        }
+
+        // SECTION 3: DOCUMENTS
         html += `<div class="section-box section-uploads">`;
         html += `<div class="section-title">${t.sectUploads}</div>`;
         html += `<table class="table table-sm mb-0">`;
