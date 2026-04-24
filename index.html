@@ -32,6 +32,9 @@
     
     .success-banner { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
     
+    /* New Warning Banner */
+    .warning-banner { color: #dc3545; background: #fff5f5; border: 1px dashed #dc3545; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 0.9rem; }
+
     /* Arabic RTL Support */
     body[dir="rtl"] { text-align: right; }
     body[dir="rtl"] .text-end { text-align: left !important; }
@@ -117,6 +120,8 @@
         btnBack: "← Search Another Student",
         submitted: "Submitted",
         notSubmitted: "Not Submitted",
+        warning24h: "New uploads may take 24 hours to show as submitted.",
+        multipleSub: "You can submit multiple times if needed.",
         docs: {
           "Parent Med": "Parent Medical Release",
           "Phys Med": "Physician's Medical Release",
@@ -150,6 +155,8 @@
         btnBack: "← Buscar Otro Estudiante",
         submitted: "Enviado",
         notSubmitted: "No Enviado",
+        warning24h: "Las nuevas cargas pueden tardar 24 horas en mostrarse como enviadas.",
+        multipleSub: "Puede enviar varias veces si es necesario.",
         docs: {
           "Parent Med": "Autorización Médica de Padres",
           "Phys Med": "Autorización Médica del Médico",
@@ -183,6 +190,8 @@
         btnBack: "← 搜索另一名学生",
         submitted: "已提交",
         notSubmitted: "未提交",
+        warning24h: "新上传的文件可能需要 24 小时才能显示为已提交。",
+        multipleSub: "如有需要，您可以多次提交。",
         docs: {
           "Parent Med": "家长医疗授权书",
           "Phys Med": "医生医疗授权书",
@@ -216,6 +225,8 @@
         btnBack: "← البحث عن طالب آخر",
         submitted: "تم الإرسال",
         notSubmitted: "لم يتم الإرسال",
+        warning24h: "قد تستغرق التحميلات الجديدة 24 ساعة لتظهر كمرسلة.",
+        multipleSub: "يمكنك الإرسال عدة مرات إذا لزم الأمر.",
         docs: {
           "Parent Med": "الإفراج الطبي من الوالدين",
           "Phys Med": "الإفراج الطبي من الطبيب",
@@ -326,7 +337,6 @@
       }
 
       const today = new Date();
-      // UPDATED LINE: Added " 6:00 AM EST" right to the end of the date string
       const dateStr = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear() + ' 6:00 AM EST';
       let html = '';
 
@@ -356,6 +366,12 @@
         }
 
         html += `<p class="timestamp text-center">${t.timestamp}: ${dateStr}</p>`;
+
+        // NEW: 24 Hour Warning Disclaimer
+        html += `<div class="warning-banner">
+                   ⚠️ <strong>${t.warning24h}</strong><br>
+                   <span style="color: #666; font-size: 0.85rem;">${t.multipleSub}</span>
+                 </div>`;
 
         // SECTION 1: CONSENT FORMS
         html += `<div class="section-box section-forms">`;
