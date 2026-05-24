@@ -19,6 +19,7 @@
     .section-extra { border-inline-start-color: #6f42c1; background: #f8f5ff; } 
     .section-uploads { border-inline-start-color: #fd7e14; background: #fff8f0; } 
     .section-transpo { border-inline-start-color: #0dcaf0; background: #f0fcfe; } 
+    .section-field-trip { border-inline-start-color: #20c997; background: #f0fff9; }
     .section-title { font-weight: bold; color: #555; margin-bottom: 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .btn-action { margin-top: 10px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; padding: 8px 12px; }
     .table td { padding: 10px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: middle; }
@@ -30,7 +31,6 @@
     .transpo-guide { font-size: 0.8rem; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px; margin-top: 10px; }
     .transpo-guide summary { cursor: pointer; font-weight: bold; color: #004a99; outline: none; }
     
-    /* Prominent Program Label Styling */
     .program-banner { font-size: 1.1rem; font-weight: 800; padding: 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 1px; display: block; margin: 10px auto; width: fit-content; min-width: 200px; }
     .prog-discovery { background-color: #0dcaf0; color: #004a99; border: 2px solid #0dcaf0; }
     .prog-summer-away { background-color: #6f42c1; color: white; border: 2px solid #6f42c1; }
@@ -91,37 +91,34 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOwluYv0yfNQ4DZqZvkSFU5XnEF0JGDZbFQeW2v6wunmbcj6QF_AKwzSEqvz7YUHU/exec";
     
-    // Updated Uptown Stops (Discovery at Comp Sci High)
     const STOPS_UPTOWN = [
-        { name: "Comp Sci High (447 Wales Ave)", am: "8:00 AM - 9:00 AM", pm: "4:15 PM", type: "SELF" },
+        { name: "Comp Sci High (447 Wales Ave, Bronx, NY 10455)", am: "8:00 AM - 9:00 AM", pm: "4:15 PM", type: "SELF" },
         { name: "Dyckman St", am: "7:51 AM", pm: "5:09 PM", extra: "in front of La Nacional (151-169 Nagle Ave, New York, NY 10040)" },
         { name: "168th St", am: "8:00 AM", pm: "5:00 PM", extra: "in front of the Columbia University Russ Berrie Medical Science Pavilion" },
         { name: "116th St", am: "8:30 AM", pm: "4:30 PM", extra: "in front of Super Nice Coffee and Bakery (156 E 117th St, New York, NY 10035)" },
         { name: "170 St", am: "8:15 AM", pm: "4:45 PM", extra: "in front of the Speedy 1hr Photo Center (2 E 170th St, Bronx, NY 10452)" },
-        { name: "Kingsbridge Rd", am: "8:05 AM", pm: "4:55 PM", extra: "in front of the Dunkin' on 2 E Kingsbridge Rd, Bronx, NY 10468" },
+        { name: "Kingsbridge Rd", am: "8:05 AM", pm: "4:55 PM", extra: "in front of the Dunkin' (2 E Kingsbridge Rd, Bronx, NY 10468)" },
         { name: "E 161 St/Melrose Av", am: "8:15 AM", pm: "4:45 PM", extra: "in front of the Krazy Dollar store (406 E 161st St #2, Bronx, NY 10451)" },
         { name: "St. Lawrence Ave", am: "8:25 AM", pm: "4:35 PM", extra: "in front of Guatelinda (1770 Westchester Ave, Bronx, NY 10472)" },
         { name: "Gun Hill Rd", am: "8:05 AM", pm: "4:55 PM", extra: "in front of the Chase Bank (3514 White Plains Rd, Bronx, NY 10467)" },
-        { name: "Pelham Bay Park", am: "8:15 AM", pm: "4:45 PM", extra: "in front of the Dunkin' on 3281 Westchester Ave, Bronx, NY 10461" },
-        { name: "137th-City College", am: "8:05 AM", pm: "4:55 PM", extra: "in front of La Esquina Del Sazón at 3379 Broadway, New York, NY 10031" }
+        { name: "Pelham Bay Park", am: "8:15 AM", pm: "4:45 PM", extra: "in front of the Dunkin' (3281 Westchester Ave, Bronx, NY 10461)" },
+        { name: "137th-City College", am: "8:05 AM", pm: "4:55 PM", extra: "in front of La Esquina Del Sazón (3379 Broadway, New York, NY 10031)", amText: "Students meet in front of La Esquina Del Sazón", pmText: "Students dropped off in front of La Esquina Del Sazón by the 137th St 1 train" }
     ];
 
-    // Updated Downtown Stops (Discovery at New Design HS)
     const STOPS_DOWNTOWN = [
-        { name: "New Design HS (350 Grand St)", am: "8:00 AM - 9:00 AM", pm: "4:15 PM", type: "SELF" },
-        { name: "Prospect Park (B/Q)", am: "8:20 AM", pm: "4:40 PM", extra: "in front of Lincoln Market (33 Lincoln Rd, Brooklyn, NY 11225)" },
-        { name: "Canarsie-Rockaway Pkwy (L)", am: "8:09 AM", pm: "4:51 PM", extra: "in front of the Armando's Pizza (1413 Rockaway Pkwy)" },
-        { name: "Church Ave (B/Q)", am: "8:21 AM", pm: "4:39 PM", extra: "in front of the El Centenario Pizza (57 E 18th St, Brooklyn, NY 11226)" },
-        { name: "Crown Hts-Utica (3/4)", am: "8:10 AM", pm: "4:50 PM", extra: "by the elevator entrance (street level) outside of the station" },
-        { name: "Greenpoint Ave (G)", am: "8:11 AM", pm: "4:49 PM", extra: "in front of the Pelicana Chicken (941 Manhattan Ave, Brooklyn, NY 11222)" },
-        { name: "Myrtle-Willoughby Aves (G)", am: "8:12 AM", pm: "4:48 PM", extra: "in front of the Falkowitz Cakes And Desserts (597 Marcy Ave, Brooklyn, NY 11206)" },
-        { name: "36th St (D/N/R)", am: "8:20 AM", pm: "4:40 PM", extra: "at MTA agent booth inside the station at 36th St.(D/N/R)" },
-        { name: "111th (7)", am: "7:55 AM", pm: "5:05 PM", extra: "in front of La Gitana #2 (11103 Roosevelt Ave, Flushing, NY 11368)" },
-        { name: "Grand Ave/Newtown (M/R)", am: "8:00 AM", pm: "5:00 PM", extra: "in front of the Dunkin' Donuts (86-10 Queens Blvd, Queens, NY 11373)" }
+        { name: "New Design HS (350 Grand St, New York, NY 10002)", am: "8:00 AM - 9:00 AM", pm: "4:15 PM", type: "SELF" },
+        { name: "Prospect Park", am: "8:20 AM", pm: "4:40 PM", extra: "in front of Lincoln Market (33 Lincoln Rd, Brooklyn, NY 11225)" },
+        { name: "Canarsie-Rockaway Pkwy", am: "8:09 AM", pm: "4:51 PM", extra: "in front of the Armando's Pizza (1413 Rockaway Pkwy)" },
+        { name: "Church Ave", am: "8:21 AM", pm: "4:39 PM", extra: "in front of the El Centenario Pizza (57 E 18th St, Brooklyn, NY 11226)" },
+        { name: "Crown Hts-Utica", am: "8:10 AM", pm: "4:50 PM", extra: "by the elevator entrance (street level) outside of the station" },
+        { name: "Greenpoint Ave", am: "8:11 AM", pm: "4:49 PM", extra: "in front of the Pelicana Chicken (941 Manhattan Ave, Brooklyn, NY 11222)" },
+        { name: "Myrtle-Willoughby Aves", am: "8:12 AM", pm: "4:48 PM", extra: "in front of the Falkowitz Cakes And Desserts (597 Marcy Ave, Brooklyn, NY 11206)" },
+        { name: "36th St", am: "8:20 AM", pm: "4:40 PM", extra: "at MTA agent booth inside the station at 36th St.(D/N/R)" },
+        { name: "111th", am: "7:55 AM", pm: "5:05 PM", extra: "in front of La Gitana #2 (11103 Roosevelt Ave, Flushing, NY 11368)" },
+        { name: "Grand Ave/Newtown", am: "8:00 AM", pm: "5:00 PM", extra: "in front of the Dunkin' Donuts (86-10 Queens Blvd, Queens, NY 11373) between 54th Ave and Grand Ave, outside of the M train entrance" },
+        { name: "Lorimer St", am: "8:30 AM", pm: "4:30 PM", extra: "in front of the Cozzi Pizza (584 Broadway #586, Brooklyn, NY 11206)" }
     ];
 
-    //Must have FOUR translation languages (english, spanish, chinese, arabic)
-    //DO NOT REMOVE ANY
     const TRANSLATIONS = {
       en: {
         title: "BEAM Student Portal", subtitle: "Check your registration progress and missing forms here", 
@@ -130,6 +127,7 @@
         errorConn: "Connection Issue. We couldn't verify automatically.", manualBtn: "Launch Secure Portal ↗",
         success: "🎉 Registration is complete!", incomplete: "⚠️ Your registration is still in progress. Please complete the missing items below.",
         timestamp: "Status as of", sectForms: "Registration Forms", sectExtra: "Additional Acknowledgements", sectUploads: "Document Uploads", sectTrans: "Transportation",
+        sectFieldTrip: "Field Trip Permission Slip", fieldTripLabel: "Field Trip Permission Slip", btnFieldTrip: "Complete Field Trip Permission Slip",
         regFormsLabel: "Registration & Consent Forms", groupedForms: "Student Information and Consent Forms",
         btnForms: "Complete Forms Now", btnExtra: "Complete Acknowledgement Here", btnUploads: "Upload Documents Now",
         btnFormsUpdate: "Update or Resubmit Forms", btnExtraUpdate: "Change Acknowledgement", btnUploadsUpdate: "Reupload/Update Documents",
@@ -145,6 +143,7 @@
         errorConn: "Problema de conexión. No pudimos verificar automáticamente.", manualBtn: "Abrir Portal Seguro ↗",
         success: "🎉 ¡El registro está completo!", incomplete: "⚠️ Su registro aún está en progreso. Por favor complete los elementos faltantes a continuación.",
         timestamp: "Estado al", sectForms: "Formularios de Registro", sectExtra: "Reconocimientos Adicionales", sectUploads: "Carga de Documentos", sectTrans: "Transporte",
+        sectFieldTrip: "Permiso para Excursiones", fieldTripLabel: "Permiso para Excursiones", btnFieldTrip: "Completar Permiso para Excursiones",
         regFormsLabel: "Formularios de Registro y Consentimiento", groupedForms: "Información del Estudiante y Consentimientos",
         btnForms: "Completar Formularios Ahora", btnExtra: "Completar Reconocimiento Aquí", btnUploads: "Subir Documentos Ahora",
         btnFormsUpdate: "Actualizar o Volver a Enviar Formularios", btnExtraUpdate: "Cambiar Reconocimiento", btnUploadsUpdate: "Volver a subir/actualizar documentos",
@@ -160,6 +159,7 @@
         errorConn: "连接问题。我们无法自动验证。", manualBtn: "启动安全门户 ↗",
         success: "🎉 注册已完成！", incomplete: "⚠️ 您的注册仍在进行中。请完成下面缺失的项目。",
         timestamp: "状态截至", sectForms: "注册表", sectExtra: "额外确认", sectUploads: "文件上传", sectTrans: "交通方式",
+        sectFieldTrip: "实地考察许可表", fieldTripLabel: "实地考察许可表", btnFieldTrip: "填写实地考察许可表",
         regFormsLabel: "注册和同意书", groupedForms: "学生信息和同意书",
         btnForms: "立即填写表格", btnExtra: "在此完成确认", btnUploads: "立即上传文档",
         btnFormsUpdate: "更新或重新提交表格", btnExtraUpdate: "更改确认内容", btnUploadsUpdate: "重新上传/更新文件",
@@ -175,6 +175,7 @@
         errorConn: "مشكلة في الاتصال. لم نتمكن من التحقق تلقائياً.", manualBtn: "إطلاق البوابة الآمنة ↗",
         success: "🎉 اكتمل التسجيل!", incomplete: "⚠️ تسجيلك لا يزال قيد التنفيذ. يرجى إكمال العناصر المفقودة أدناه.",
         timestamp: "الحالة اعتباراً من", sectForms: "نماذج التسجيل", sectExtra: "إقرارات إضافية", sectUploads: "تحميل المستندات", sectTrans: "المواصلات",
+        sectFieldTrip: "نموذج إذن الرحلة الميدانية", fieldTripLabel: "نموذج إذن الرحلة الميدانية", btnFieldTrip: "أكمل نموذج إذن الرحلة الميدانية",
         regFormsLabel: "نماذج التسجيل والموافقة", groupedForms: "معلومات الطالب ونماذج الموافقة",
         btnForms: "أكمل النماذج الآن", btnExtra: "أكمل الإقرار هنا", btnUploads: "تحميل المستندات الآن",
         btnFormsUpdate: "تحديث أو إعادة إرسال النماذج", btnExtraUpdate: "تغيير الإقرار", btnUploadsUpdate: "إعادة تحميل/تحديث المستندات",
@@ -211,14 +212,30 @@
     function translateStops(stopList, t) {
       return stopList.map(s => {
         if (s.type === "SELF") {
-          return `<li><strong>${t.self}:</strong> ${s.name}. ${t.arrive} ${s.am} / ${t.pick} ${s.pm}.</li>`;
+          return `
+            <li>
+              <strong>SELF/FAMILY DROP OFF + <u>SELF DISMISSAL</u></strong> - <em>${s.name}</em>:
+              Arrive between ${s.am}. Family drops off student or student commutes by themselves /
+              ${s.pm} Allow the student to <u>leave on their own</u> and commute home by themselves.
+            </li>
+            <li>
+              <strong>SELF/FAMILY DROP OFF + <u>FAMILY PICK-UP</u></strong> - <em>${s.name}</em>:
+              Arrive between ${s.am}. Family drops off student or student commutes by themselves /
+              ${s.pm} Student will be released <u>only to an authorized adult or family member</u>.
+            </li>
+          `;
         }
-        return `<li><strong>${s.name}:</strong> ${t.meet} ${s.am} / ${t.drop} ${s.pm} ${s.extra || ''}.</li>`;
+
+        return `
+          <li>
+            <strong>${s.name}</strong> - <em>${s.extra || ""}</em>:
+            ${s.am} ${s.amText || "Students meet"} /
+            ${s.pm} ${s.pmText || "Students dropped off"}.
+          </li>
+        `;
       }).join('');
     }
 
-    //manualFallback must NEVER be touched or removed since it is important for everyone to access the website
-    //DO NOT TOUCH!!
     function manualFallback() {
       const dob = document.getElementById('dob').value;
       const email = document.getElementById('email').value;
@@ -293,6 +310,9 @@
         const missingExtra = isBSA ? extraData.filter(d => d.status !== "Submitted").length : 0;
         const missingDocs = documentData.filter(d => d.status !== "Submitted").length;
 
+        const fieldTripStatus = s.fieldTrip && s.fieldTrip.status === "Submitted" ? "Submitted" : "Not Submitted";
+        const missingFieldTrip = fieldTripStatus !== "Submitted";
+
         let transComplete = true;
         let isUT = false;
 
@@ -301,16 +321,13 @@
            isUT = (s.transportation.location || "").toLowerCase().includes("uptown");
         }
 
-        const isFullyComplete = (missingConsents === 0 && missingExtra === 0 && missingDocs === 0 && transComplete);
+        const isFullyComplete = (missingConsents === 0 && missingExtra === 0 && missingDocs === 0 && !missingFieldTrip && transComplete);
 
-        // Prominent Student Name
         html += `<h4 class="text-primary fw-bold text-center mb-1">${t.statusFor} ${s.firstName}</h4>`;
         
-        // NEW: Prominent Program Banner
         const progClass = (s.program === "Discovery") ? "prog-discovery" : "prog-summer-away";
         html += `<div class="text-center"><span class="program-banner ${progClass}">${s.program}</span></div>`;
 
-        // ADDED: Camp Location Details strictly for Discovery Program
         if (s.program === "Discovery" && s.transportation) {
             if (isUT) {
                 html += `<div class="text-center fw-bold mb-3" style="color: #198754; font-size: 0.9rem;">Camp Location: Uptown<br>Comp Sci High (447 Wales Ave, Bronx, NY 10455)</div>`;
@@ -324,7 +341,6 @@
         html += `<p class="timestamp text-center small text-muted">${t.timestamp}: ${dateStr}</p>`;
         html += `<div class="warning-banner">⚠️ <strong>${t.warning24h}</strong><br><span style="color: #666; font-size: 0.85rem;">${t.multipleSub}</span></div>`;
 
-        // 1. FORMS
         html += `<div class="section-box section-forms">
                   <div class="section-title">${t.sectForms}</div>
                   <table class="table table-sm mb-0">
@@ -335,7 +351,6 @@
         }
         html += `</div>`;
 
-        // 2. ACKNOWLEDGEMENTS
         if (isBSA && extraData.length > 0) {
           html += `<div class="section-box section-extra">
                     <div class="section-title">${t.sectExtra}</div>
@@ -350,7 +365,6 @@
           html += `</div>`;
         }
 
-        // 3. UPLOADS
         html += `<div class="section-box section-uploads">
                   <div class="section-title">${t.sectUploads}</div>
                   <table class="table table-sm mb-0">`;
@@ -366,7 +380,27 @@
         }
         html += `</div>`;
 
-        // 4. TRANSPORTATION
+        const fieldTripUrl = isBSA
+          ? "https://www.surveymonkey.com/r/8PS876W"
+          : (isUT ? "https://www.surveymonkey.com/r/LKJWB2T" : "https://www.surveymonkey.com/r/LKY6DNY");
+
+        html += `<div class="section-box section-field-trip">
+                  <div class="section-title">${t.sectFieldTrip}</div>
+                  <table class="table table-sm mb-0">
+                    <tr>
+                      <td class="doc-name">${t.fieldTripLabel}</td>
+                      <td class="${fieldTripStatus === 'Submitted' ? 'status-Submitted' : 'status-Not-Submitted'} text-end">
+                        ${fieldTripStatus === 'Submitted' ? t.submitted : t.notSubmitted}
+                      </td>
+                    </tr>
+                  </table>`;
+
+        if (missingFieldTrip) {
+            html += `<a href="${fieldTripUrl}" target="_blank" class="btn btn-success btn-action w-100">${t.btnFieldTrip}</a>`;
+        }
+
+        html += `</div>`;
+
         if (s.program === "Discovery" && s.transportation) {
             const stopList = isUT ? STOPS_UPTOWN : STOPS_DOWNTOWN;
             const surveyUrl = isUT ? "https://www.surveymonkey.com/r/RRNN52J" : "https://www.surveymonkey.com/r/RSHRS9Q";
@@ -386,14 +420,20 @@
                       <details class="transpo-guide"><summary>${t.guideTitle}</summary><ul>${translateStops(stopList, t)}</ul></details>
                     </div>`;
         }
+
         html += `<hr class="my-4">`;
       });
+
       document.getElementById('content').innerHTML = html;
       document.getElementById('searchBox').classList.add('hidden');
       document.getElementById('results').classList.remove('hidden');
     }
 
-    function resetSearch() { document.getElementById('results').classList.add('hidden'); document.getElementById('searchBox').classList.remove('hidden'); currentResults = null; }
+    function resetSearch() {
+      document.getElementById('results').classList.add('hidden');
+      document.getElementById('searchBox').classList.remove('hidden');
+      currentResults = null;
+    }
   </script>
 </body>
 </html>
